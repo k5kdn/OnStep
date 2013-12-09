@@ -59,6 +59,7 @@
  *                                       stepper motor high-speed takeup during backlash compensation.  Added option to easily adjust backlash takeup rate.
  * 11-22-2013          0.99b2            Minor DEBUG mode fixes.
  * 11-22-2013          0.99b3            Minor DEC_RATIO fixes.
+ * 12-9-2013           0.99b4            Sidereal rate fine tracking adjustment was outside of initialization section
  *
  *
  * Author: Howard Dutton
@@ -109,8 +110,8 @@
 #include "errno.h"
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate   "11 22 13"
-#define FirmwareNumber "0.99b3"
+#define FirmwareDate   "12 09 13"
+#define FirmwareNumber "0.99b4"
 #define FirmwareName   "On-Step"
 #define FirmwareTime   "12:00:00"
 
@@ -599,8 +600,8 @@ void setup() {
 
   // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
   // 10mS resolution timer, ticks per sidereal 1/100 second 
-  #endif
   masterSiderealInterval = round(10027.3/InterruptRate); EEPROM_writeInt(EE_siderealInterval,masterSiderealInterval);
+  #endif
   
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
   masterSiderealInterval=EEPROM_readInt(EE_siderealInterval);
