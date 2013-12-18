@@ -800,15 +800,11 @@ void processCommands() {
         // calculate the checksum
         byte cks=0; for (int cksCount0=0; cksCount0<strlen(reply); cksCount0++) {  cks+=reply[cksCount0]; }
 #endif
-//        Serial.print(reply);
         Serial1.print(reply);
 #ifdef CHKSUM1_ON
-//        Serial.print(cks,HEX);
-//        Serial.print("#");
         Serial1.print(cks,HEX);
-        Serial1.print("#");
 #endif
-//        Serial.print("\r\n");
+        Serial1.print("#");
         Serial1.print("\r\n");
       }
 #endif
