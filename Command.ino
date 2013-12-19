@@ -840,7 +840,7 @@ boolean buildCommand(char c) {
     // checksum the data, for example ":11111126".  I don't include the command frame in the checksum.  The error response is a checksumed null string "00#\r\n" which means re-transmit.
     byte len=strlen(command_serial_zero);
     byte cks=0; for (int cksCount0=1; cksCount0<len-2; cksCount0++) {  cks+=command_serial_zero[cksCount0]; }
-    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_zero[len-2]) && (chkSum[1]==command_serial_zero[len-1]))) { clearCommand_serial_zero();  Serial.print("00#\r\n"); return false; }
+    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_zero[len-2]) && (chkSum[1]==command_serial_zero[len-1]))) { clearCommand_serial_zero(); Serial.print("00#\r\n"); return false; }
     --len; command_serial_zero[--len]=0;
 #endif
 
@@ -888,7 +888,7 @@ boolean buildCommand_serial_one(char c) {
     // checksum the data, as above.  
     byte len=strlen(command_serial_one);
     byte cks=0; for (int cksCount0=1; cksCount0<len-2; cksCount0++) { cks=cks+command_serial_one[cksCount0]; }
-    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_one[len-2]) && (chkSum[1]==command_serial_one[len-1]))) { clearCommand_serial_one(); Serial1.print("00#\r\n"); Serial.println(" failed"); return false; }
+    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_one[len-2]) && (chkSum[1]==command_serial_one[len-1]))) { clearCommand_serial_one(); Serial1.print("00#\r\n"); return false; }
     --len; command_serial_one[--len]=0;
 #endif
 
