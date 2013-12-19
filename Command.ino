@@ -852,9 +852,6 @@ boolean buildCommand(char c) {
     // the command is either one or two chars in length
     command_serial_zero[3]=0;  memmove(command_serial_zero,(char *)&command_serial_zero[1],3);
 
-//    Serial.println(command);
-//    Serial.println(parameter);
-
     return true;
   } else {
     return false;
@@ -899,9 +896,6 @@ boolean buildCommand_serial_one(char c) {
 
     // the command is either one or two chars in length
     command_serial_one[3]=0;  memmove(command_serial_one,(char *)&command_serial_one[1],3);
-
-//    Serial.println(command);
-//    Serial.println(parameter);
 
     return true;
   } else {
