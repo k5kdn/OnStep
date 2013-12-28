@@ -236,7 +236,3 @@ byte goTo(long HASteps, long DecSteps) {
 
   return 0;
 }
-
-
-
-
