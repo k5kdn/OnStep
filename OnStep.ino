@@ -155,7 +155,7 @@
                         // see the command reference on my site (stellarjourney.com)
 
 // ADJUST THE FOLLOWING TO MATCH YOUR MOUNT --------------------------------------------------------------------------------
-#define InterruptRate         16     // maximum step rate, default=32uS, fastest=16uS?
+#define InterruptRate         32     // maximum step rate, default=32uS, fastest=16uS?
 
 #define MaxRate               4      // this is the step rate multiplier for maximum slew,  default=4*InterruptRate=128uS - lower numbers speed things up
                                      // too low and the stepper motor will be more apt to stall as inductance robs it of power while the required acceleration
@@ -164,10 +164,8 @@
 #define BacklashTakeupRate    20     // this is the backlash takeup rate (in multipules of the sidereal rate), too fast and your motors will stall
 
                                      // for my G11 both RA and Dec axis have the same gear train and this
-//#define StepsPerDegreeHA  11520L     // is calculated as :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-//#define StepsPerDegreeDec 11520L     // is calculated as :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-#define StepsPerDegreeHA  6480L     // is calculated as :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-#define StepsPerDegreeDec 6480L     // is calculated as :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+#define StepsPerDegreeHA  11520L     // is calculated as :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+#define StepsPerDegreeDec 11520L     // is calculated as :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
                                      // G11                      48            * 16          * 15         *  360/360              = 11520
                                      // the steps per second sidereal rate = 48 = (11520/3600)*15
                                    
@@ -177,12 +175,10 @@
                                      // the steps per worm rotation would be 25600 (which moves the 'scope 4 degrees in RA)
                                      // which would require 960 seconds of PEC readings storage (OnStep can only handle 824 by default, see below) 
 
-//#define StepsPerSecond        48     // number of steps in a second = 11520/240 = ie. 11520 steps in 240 (sidereal) seconds - OnStep can handle up
-#define StepsPerSecond        27     // number of steps in a second = 11520/240 = ie. 11520 steps in 240 (sidereal) seconds - OnStep can handle up
+#define StepsPerSecond        48     // number of steps in a second = 11520/240 = ie. 11520 steps in 240 (sidereal) seconds - OnStep can handle up
                                      // to 100 steps/second when sidereal tracking (StepsPerWormRotation must be evenly divisible by StepsPerSecond)
 
-//#define StepsPerWormRotation 11520L  // PEC, number of steps for a complete worm rotation (RA)
-#define StepsPerWormRotation 6480L  // PEC, number of steps for a complete worm rotation (RA)
+#define StepsPerWormRotation 11520L  // PEC, number of steps for a complete worm rotation (RA)
 
 #define PECBufferSize         824    // PEC, buffer size, 824 is default and the maximum on a ATMega328. The ATMega2560 max should be no more than 1336
 
