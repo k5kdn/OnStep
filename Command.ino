@@ -546,7 +546,7 @@ void processCommands() {
             timeZone=i; 
             b=timeZone+128; 
             EEPROM.write(EE_sites+(currentSite)*25+8,b);
-            UT1=LMT+timeZone; 
+            UT1=LMT+timeZone;
             UT1_start  =UT1;
             UT1mS_start=millis(); 
             LST=jd2last(JD,UT1); 
@@ -558,7 +558,7 @@ void processCommands() {
 //          Set the lowest elevation to which the telescope will goTo
 //          Return: 0 on failure
 //                  1 on success
-      if (command[1]=='h')  { if ((parameter[0]!=0) && (strlen(parameter)<4)) { i=atoi(parameter); if ( (!errno) && ((i>=-30) && (i<=30))) { minAlt=i; EEPROM.write(EE_minAlt,minAlt-128); } else commandError=true; } else commandError=true; } else
+      if (command[1]=='h')  { if ((parameter[0]!=0) && (strlen(parameter)<4)) { i=atoi(parameter); if ( (!errno) && ((i>=-30) && (i<=30))) { minAlt=i; EEPROM.write(EE_minAlt,minAlt+128); } else commandError=true; } else commandError=true; } else
 //  :SLHH:MM:SS#
 //          Set the local Time
 //          Return: 0 on failure
@@ -840,7 +840,7 @@ boolean buildCommand(char c) {
     // checksum the data, for example ":11111126".  I don't include the command frame in the checksum.  The error response is a checksumed null string "00#\r\n" which means re-transmit.
     byte len=strlen(command_serial_zero);
     byte cks=0; for (int cksCount0=1; cksCount0<len-2; cksCount0++) {  cks+=command_serial_zero[cksCount0]; }
-    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_zero[len-2]) && (chkSum[1]==command_serial_zero[len-1]))) { clearCommand_serial_zero(); Serial.print("00#\r\n"); return false; }
+    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_zero[len-2]) && (chkSum[1]==command_serial_zero[len-1]))) { clearCommand_serial_zero();  Serial.print("00#\r\n"); return false; }
     --len; command_serial_zero[--len]=0;
 #endif
 
@@ -851,6 +851,9 @@ boolean buildCommand(char c) {
 
     // the command is either one or two chars in length
     command_serial_zero[3]=0;  memmove(command_serial_zero,(char *)&command_serial_zero[1],3);
+
+//    Serial.println(command);
+//    Serial.println(parameter);
 
     return true;
   } else {
@@ -885,7 +888,7 @@ boolean buildCommand_serial_one(char c) {
     // checksum the data, as above.  
     byte len=strlen(command_serial_one);
     byte cks=0; for (int cksCount0=1; cksCount0<len-2; cksCount0++) { cks=cks+command_serial_one[cksCount0]; }
-    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_one[len-2]) && (chkSum[1]==command_serial_one[len-1]))) { clearCommand_serial_one(); Serial1.print("00#\r\n"); return false; }
+    char chkSum[3]; sprintf(chkSum,"%02X",cks); if (!((chkSum[0]==command_serial_one[len-2]) && (chkSum[1]==command_serial_one[len-1]))) { clearCommand_serial_one(); Serial1.print("00#\r\n"); Serial.println(" failed"); return false; }
     --len; command_serial_one[--len]=0;
 #endif
 
@@ -896,6 +899,9 @@ boolean buildCommand_serial_one(char c) {
 
     // the command is either one or two chars in length
     command_serial_one[3]=0;  memmove(command_serial_one,(char *)&command_serial_one[1],3);
+
+//    Serial.println(command);
+//    Serial.println(parameter);
 
     return true;
   } else {
@@ -950,7 +956,3 @@ void setGuideRate(int g) {
   msMoveHA =1000/(((StepsPerDegreeHA *moveRates[g])/amountMoveHA )/3600);
   msMoveDec=1000/(((StepsPerDegreeDec*moveRates[g])/amountMoveDec)/3600);
 }
-
-
-
-
