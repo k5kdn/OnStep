@@ -60,6 +60,7 @@
  * 11-22-2013          0.99b2            Minor DEBUG mode fixes.
  * 11-22-2013          0.99b3            Minor DEC_RATIO fixes.
  * 11-23-2013          0.99b4            MinAlt was being written to EEPROM incorrectly on set. MasterSiderealInterval should have been initialized only once.
+ * 01-16-2014          0.99b5            Changes to setPark, faster backlash takeup and compatibility with 32 uStep stepper motor drivers
  *
  *
  * Author: Howard Dutton
