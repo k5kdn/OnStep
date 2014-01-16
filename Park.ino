@@ -11,12 +11,12 @@ boolean setPark() {
     // turn off the PEC offset for a moment
     cli(); long l = PEC_HA; PEC_HA=0; sei();
     
-    // SiderealRate (which is really twice the sidereal rate and another 5X = 10X speed), ignore rate ratios for the moment - we're working in steps
+    // SiderealRate (which is really twice the sidereal rate and another 10X = 20X speed), ignore rate ratios - we're working in steps
     cli();
     int LastSkipCountHA =skipCountHA;
     int LastSkipCountDec=skipCountDec;
-    skipCountHA =SiderealRate/5;
-    skipCountDec=SiderealRate/5;
+    skipCountHA =SiderealRate/10;
+    skipCountDec=SiderealRate/10;
     sei();
     
     // find a park position and store it, the main loop isn't running while we're here
@@ -24,14 +24,14 @@ boolean setPark() {
 
     // ok, now figure out where to move the HA and Dec to arrive at stepper home positions
     // per Allegro data-sheet for A4983, 1/2 step takes 8 steps to cycle home, 1/4 = 16,
-    // ... 1/8 = 32 and 1/16 = 64
+    // ... 1/8 = 32 and 1/16 = 64 (*2 to handle up to 32 uStep drivers)
     cli();
-    targetHA =(posHA / 64) * 64;
-    targetDec=(posDec / 64) * 64;
+    targetHA =(posHA / 128L) * 128L;
+    targetDec=(posDec / 128L) * 128L;
     sei();
 
-    // let it settle into a fixed position, 10 times the sidereal rate is 480 steps per second on my mount... 
-    // 64/480=0.13S, roughly 8 times that should cover the smallest step size anyone (should) ever use
+    // let it settle into a fixed position, 20 times the sidereal rate at 12 steps per second minimum... 
+    // 128/240=0.53S, worst case
     delay(1000);
 
     // reality check, we should be at the park position
