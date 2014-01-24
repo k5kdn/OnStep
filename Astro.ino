@@ -23,6 +23,8 @@ boolean dateToDouble(double *JulianDay, char *date) {
 boolean hmsToDouble(double *f, char *hms) {
   char h[3],m[5],s[3];
   int  h1,m1,m2=0,s1=0;
+
+  while (*hms==' ') hms++; // strip prefix white-space
   
   if (highPrecision) { if (strlen(hms)!= 8) return false; } else if (strlen(hms)!= 7) return false;
 
@@ -76,6 +78,8 @@ boolean dmsToDouble(double *f, char *dms, boolean sign_present) {
   int checkLen,checkLen1;
   double sign = 1.0;
   boolean secondsOff = false;
+
+  while (*dms==' ') dms++; // strip prefix white-space
 
   checkLen1=strlen(dms);
 
