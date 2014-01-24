@@ -24,7 +24,7 @@ ISR(TIMER1_COMPA_vect)
       (inBacklashHA && (skipHA>=skipCountBacklashHA))) {                        
 
     if (posHA<(targetHA+PEC_HA)) dirHA=1; else dirHA=0;                        // Direction control
-#ifdef ReverseHA
+#ifdef REVERSE_HA_ON
     if (HADir==dirHA) CLR(HADirPORT, HADirBit); else SET(HADirPORT, HADirBit); // Set direction, HADir default LOW (=0, for my wiring)
 #else
     if (HADir==dirHA) SET(HADirPORT, HADirBit); else CLR(HADirPORT, HADirBit); // Set direction, HADir default LOW (=0, for my wiring)
@@ -51,7 +51,7 @@ ISR(TIMER1_COMPA_vect)
 
     // telescope normally starts on the EAST side of the pier looking at the WEST sky
     if (posDec<targetDec) dirDec=1; else dirDec=0;                                   // Direction control
-#ifdef ReverseDec
+#ifdef REVERSE_DEC_ON
     if (DecDir==dirDec) SET(DecDirPORT, DecDirBit); else CLR(DecDirPORT, DecDirBit); // Set direction, decDir default HIGH (=1, for my wiring)
 #else
     if (DecDir==dirDec) CLR(DecDirPORT, DecDirBit); else SET(DecDirPORT, DecDirBit); // Set direction, decDir default HIGH (=1, for my wiring)
