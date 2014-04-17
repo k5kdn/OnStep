@@ -62,6 +62,7 @@
  * 11-23-2013          0.99b4            MinAlt was being written to EEPROM incorrectly on set. MasterSiderealInterval should have been initialized only once.
  * 01-16-2014          0.99b5            Changes to setPark, faster backlash takeup and compatibility with 32 uStep stepper motor drivers
  * 01-24-2014          0.99b6            Fixed references for reversing HA/Dec directions, added white-space striping to routines in Astro.ino
+ * 04-17-2014          0.99b7            Fixed successful syncEqu() undefined return
  *
  *
  * Author: Howard Dutton
@@ -112,8 +113,8 @@
 #include "errno.h"
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate   "01 24 14"
-#define FirmwareNumber "0.99b6"
+#define FirmwareDate   "04 17 14"
+#define FirmwareNumber "0.99b7"
 #define FirmwareName   "On-Step"
 #define FirmwareTime   "12:00:00"
 
