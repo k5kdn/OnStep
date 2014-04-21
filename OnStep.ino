@@ -63,6 +63,7 @@
  * 01-16-2014          0.99b5            Changes to setPark, faster backlash takeup and compatibility with 32 uStep stepper motor drivers
  * 01-24-2014          0.99b6            Fixed references for reversing HA/Dec directions, added white-space striping to routines in Astro.ino
  * 04-17-2014          0.99b7            Fixed successful syncEqu() undefined return
+ * 04-21-2014          0.99b8            Set-park delay adjusted to allow for larger backlash values
  *
  *
  * Author: Howard Dutton
