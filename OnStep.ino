@@ -64,6 +64,7 @@
  * 01-24-2014          0.99b6            Fixed references for reversing HA/Dec directions, added white-space striping to routines in Astro.ino
  * 04-17-2014          0.99b7            Fixed successful syncEqu() undefined return
  * 04-21-2014          0.99b8            Set-park delay adjusted to allow for larger backlash values
+ * 04-24-2014          0.99b9            Fixed minor bug in :VW# command (PEC stepsPerWormRotation)
  *
  *
  * Author: Howard Dutton
@@ -114,8 +115,8 @@
 #include "errno.h"
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate   "04 21 14"
-#define FirmwareNumber "0.99b8"
+#define FirmwareDate   "04 24 14"
+#define FirmwareNumber "0.99b9"
 #define FirmwareName   "On-Step"
 #define FirmwareTime   "12:00:00"
 
