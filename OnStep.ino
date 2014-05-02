@@ -116,8 +116,8 @@
 #include "errno.h"
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate   "04 24 14"
-#define FirmwareNumber "0.99b9"
+#define FirmwareDate   "05 02 14"
+#define FirmwareNumber "0.99b10"
 #define FirmwareName   "On-Step"
 #define FirmwareTime   "12:00:00"
 
