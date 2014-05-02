@@ -65,6 +65,7 @@
  * 04-17-2014          0.99b7            Fixed successful syncEqu() undefined return
  * 04-21-2014          0.99b8            Set-park delay adjusted to allow for larger backlash values
  * 04-24-2014          0.99b9            Fixed minor bug in :VW# command (PEC stepsPerWormRotation)
+ * 05-02-2014          0.99b10           Fixed bug when parking near the meridian
  *
  *
  * Author: Howard Dutton
