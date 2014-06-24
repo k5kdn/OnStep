@@ -243,7 +243,6 @@ double longitude = 0.0;
 long SiderealRate;                   // this is the step rate divisor for sidereal time, default=651 counts=( 1/(StepsPerDegreeHA/(3600/15)) )*(1000000/InterruptRate)
 
 #define StepsForRateChange    1000.0 // used in calculating the number of steps during acceleration and de-acceleration
-volatile int  skipCountRate = 1;     // this is the rate of change for the steppers speed
 volatile int  skipHA        = 0;     // higher numbers slow down the acceleration and de-acceleration
 volatile int  skipCountHA;
 volatile int  skipCountBacklashHA;
