@@ -55,8 +55,6 @@ void moveTo() {
   sei();
 
   // First, for Right Ascension
-  skipCountRate=(skipCountHA/10); if (skipCountRate<1) skipCountRate=1; // lower limit always allows change
-
   double temp;
   if (distStartHA>distDestHA) {
     temp=(StepsForRateChange/sqrt(distDestHA));       // 50000/40000=1.02  50000/10=5000 slow down the slew
@@ -71,8 +69,6 @@ void moveTo() {
   cli();  skipCountHA=temp;  sei();
 
   // Now, for Declination
-  skipCountRate=(skipCountDec/10); if (skipCountRate<1) skipCountRate=1; // lower limit always allows change
-  
   if (distStartDec>distDestDec) {
       temp=(StepsForRateChange/sqrt(distDestDec));    // 50000/40000=1.02  50000/10=5000 slow down the slew
 //      if ((temp<100) && (temp>=10))  temp=101;        // exclude a range of speeds
