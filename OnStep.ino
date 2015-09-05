@@ -145,6 +145,9 @@
  * 07-14-2015          1.0b20            Minor code corrections to fix warnings during Teensy3.1 compile.  Re-arranged altitude limits calculation so it completes once a second.
  * 07-17-2015          1.0b21            Added code that makes more intelligent decisions about when to use an RA "waypoint" back to the polar home position during meridian flips to avoid exceeding 
  *                                       horizon limits (makes most meridian flips faster.) Compatibility fixes to EEPROM_writeInt and EEPROM_readInt for Teensy3.1 target.  Support for up to 256X micro-stepping.
+ *                                       Improvements to library catalogs... added ability to store and recall catalog name records, added ability to delete individual records.
+ * 08-18-2015          1.0b22            PEC improvements, automatic handling of differing axis reductions.  HA limits and meridian flip now account for IH index error.
+ * 09-01-2015          1.0b23            Implemented acceleration for guide commands.  Adjusted rates so that R8(RS) are 1/2x MaxRate and R9 is 1x MaxRate.
  *
  *
  * Author: Howard Dutton
@@ -167,8 +170,8 @@
 #include "FPoint.h"
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate   "07 17 15"
-#define FirmwareNumber "1.0b21"
+#define FirmwareDate   "09 01 15"
+#define FirmwareNumber "1.0b23"
 #define FirmwareName   "On-Step"
 #define FirmwareTime   "12:00:00"
 
@@ -233,6 +236,7 @@ volatile double  pecTimerRateHA = 0;
 volatile double  guideTimerRateHA = 0;
 volatile double  guideTimerRateDec = 0;
 volatile double  timerRateRatio = ((double)StepsPerDegreeHA/(double)StepsPerDegreeDec);
+volatile boolean useTimerRateRatio = (StepsPerDegreeHA!=StepsPerDegreeDec);
 #define SecondsPerWormRotation  ((long)(StepsPerWormRotation/StepsPerSecond))
 #define StepsPerSecondDec       ((double)(StepsPerDegreeDec/3600.0)*15.0)
 
@@ -536,6 +540,7 @@ double azmCor            = 0;       // - is right of the pole, + is left
 double doCor             = 0;       // declination/optics orthogonal correction
 double pdCor             = 0;       // declination/polar orthogonal correction
 double IH                = 0;       // offset corrections/align
+long   IHS               = 0;
 double ID                = 0;
 
 // tracking and PEC, fractional steps
@@ -546,8 +551,12 @@ fixed_t pstep;
 #define GuideRate1x        2
 #define GuideRate16x       6
 #define GuideRateNone      255
-double  guideRates[10]={3.75,7.5,15,30,60,120,240,360,600,900}; 
-//                      .25X .5x 1x 2x 4x  8x 16x 24x 40x 60x
+
+#define slewRate (1.0/((StepsPerDegreeHA*(MaxRate/1000000.0)))*3600.0)
+#define halfSlewRate (slewRate/2.0)
+double  guideRates[10]={3.75,7.5,15,30,60,120,360,720,halfSlewRate,slewRate};
+//                      .25X .5x 1x 2x 4x  8x 24x 48x ?            ?
+
 byte currentGuideRate        = GuideRate16x;
 byte currentPulseGuideRate   = GuideRate1x;
 volatile byte activeGuideRate= GuideRateNone;
@@ -567,9 +576,6 @@ fixed_t amountGuideHA;
 long    guideHA           = 0;
 fixed_t amountGuideDec;
 long    guideDec          = 0;
-//
-long lstGuideStopHA=0;
-long lstGuideStopDec=0;
 
 // PEC control
 #define PECStatusString  "IpPrR"
@@ -580,7 +586,7 @@ long lstGuideStopDec=0;
 #define RecordPEC        4
 long    accPecGuideHA    = 0;        // for PEC, buffers steps to be recorded
 boolean PECfirstRecord   = false;
-boolean PECstatus        = IgnorePEC;
+int     PECstatus        = IgnorePEC;
 boolean PECrecorded      = false;
 long    PECindex_record  = 0;
 double  PECstartDelta    = 0;
@@ -593,6 +599,8 @@ long    lastPECindex     = -1;
 long    PECtime_lastSense= 0;      // time since last PEC index was sensed
 long    PECindex_sense   = 0;      // position of active PEC index sensed
 long    next_PECindex_sense=-1;    // position of next PEC index sensed
+int     PECautoRecord    = 0;      // for writing to PEC table to EEPROM
+boolean PECindexDetected = false;  // indicates PEC index was found
 
 // backlash control
 volatile int backlashHA   = 0;
@@ -1013,7 +1021,7 @@ void loop() {
           guideDurationHA=-1;
           cli(); if (guideDirHA=='e') guideTimerRateHA=-guideTimerRate; else guideTimerRateHA=guideTimerRate; sei();
         } else {
-          if (guideDirHA) { lstGuideStopHA=lst+3; guideDirHA=0; }
+          if (guideDirHA) { guideDirHA='b'; }
         }
       }
       // Dec changed?
@@ -1029,7 +1037,7 @@ void loop() {
           guideDurationDec=-1;
           cli(); guideTimerRateDec=guideTimerRate; sei();
         } else {
-          if (guideDirDec) { lstGuideStopDec=lst+3; guideDirDec=0; }
+          if (guideDirDec) { guideDirDec='b'; }
         }
       }
     }
@@ -1038,20 +1046,25 @@ void loop() {
     guideHA=0;
     Guide();
   }
-  
+
   // PERIODIC ERROR CORRECTION -------------------------------------------------------------------------
   if ((trackingState==TrackingSidereal) && (!((guideDirHA || guideDirDec) && (activeGuideRate>GuideRate1x)))) { 
     // only active while sidereal tracking with a guide rate that makes sense
     Pec();
   } else disablePec();
+  if (PECautoRecord>0) {
+    // write PEC table to EEPROM, should do about 100 bytes/second
+    PECautoRecord--;
+    EEPROM.update(EE_PECindex+PECautoRecord,PEC_buffer[PECautoRecord]);
+  }
 
   // SIDEREAL TRACKING ---------------------------------------------------------------------------------
   cli(); long tempLst=lst; sei();
-  if (tempLst!=siderealTimer) {
+  if ((tempLst!=siderealTimer) && (!(guideDirHA && (activeGuideRate>GuideRate1x)))) {
     siderealTimer=tempLst;
     
     // only active while sidereal tracking with a guide rate that makes sense
-    if ((trackingState==TrackingSidereal) && !(guideDirHA && (activeGuideRate>GuideRate1x))) {
+    if ((trackingState==TrackingSidereal) ) {
       // apply the Tracking, Guiding, and PEC
       cli();
       targetHA.fixed+=fstep.fixed;
@@ -1063,15 +1076,15 @@ void loop() {
       #endif
     }
 
+    // keeps the target where it's supposed to be while doing gotos
     if (trackingState==TrackingMoveTo) {
-      // keeps the target where it's supposed to be while doing gotos
       if (lastTrackingState==TrackingSidereal) { origTargetHA.fixed+=fstep.fixed; cli(); targetHA.fixed+=fstep.fixed; sei();  }
       moveTo();
     }
-  }
 
-  // figure out the current Alititude
-  if (lst%5==0) do_alt_calc(); // call 20x a second to spread out the overhead
+    // figure out the current Alititude
+    if (lst%5==0) do_alt_calc(); // call 20x a second to spread out the overhead
+  }
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
@@ -1121,8 +1134,8 @@ void loop() {
 
     // safety checks, keeps mount from tracking past the meridian limit, past the underPoleLimit, below horizon limit, above the overhead limit, or past the Dec limits
     if (meridianFlip!=MeridianFlipNever) {
-      if (pierSide==PierSideWest) { cli(); if (posHA>(minutesPastMeridianW*StepsPerDegreeHA/4L)) { if (trackingState==TrackingMoveTo) abortSlew=true; else trackingState=TrackingNone;  sei(); }}
-      if (pierSide==PierSideEast) { cli(); if (posHA>(underPoleLimit*StepsPerDegreeHA*15L))      { if (trackingState==TrackingMoveTo) abortSlew=true; else trackingState=TrackingNone;  sei(); }}
+      if (pierSide==PierSideWest) { cli(); if (posHA+IHS>(minutesPastMeridianW*StepsPerDegreeHA/4L)) { if (trackingState==TrackingMoveTo) abortSlew=true; else trackingState=TrackingNone;  sei(); }}
+      if (pierSide==PierSideEast) { cli(); if (posHA+IHS>(underPoleLimit*StepsPerDegreeHA*15L))      { if (trackingState==TrackingMoveTo) abortSlew=true; else trackingState=TrackingNone;  sei(); }}
     } else {
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
       cli(); if (posHA>(underPoleLimit*StepsPerDegreeHA*15L)) { if (trackingState==TrackingMoveTo) abortSlew=true; else trackingState=TrackingNone;  sei(); }

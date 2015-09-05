@@ -50,11 +50,12 @@
 #define ST4_OFF
 // PPS sense rising edge on pin 21 for optional precision clock source (GPS, for example), default=OFF (Teensy3.1 Pin 23)
 #define PPS_SENSE_OFF
-// PEC sense, rising edge on pin 2 (ex. PEC_SENSE_ON) or threshold value on Analog 1; for optional PEC index, default=OFF
+// PEC sense, rising edge (default with PEC_SENSE_STATE HIGH, use LOW for falling edge) on pin 2 (ex. PEC_SENSE_ON) or threshold value on Analog 1; for optional PEC index, default=OFF
 // analog values range from 0 to 1023 which indicate voltages from 0-5VDC on the A1 pin, for example "PEC_SENSE 600" would detect an index when the voltage exceeds 2.92V
 // with either index detection method, once triggered 60s must expire before another detection can happen.  This gives time for the index magnet to pass by the detector before another cycle begins.
 // Note: Analog PEC index sense is not supported on the Teensy3.1
-#define PEC_SENSE_OFF
+#define PEC_SENSE_ON
+#define PEC_SENSE_STATE HIGH
 // switch close (to ground) on pin 3 for optional limit sense (stops gotos and/or tracking), default=OFF
 #define LIMIT_SENSE_OFF
 // light status LED by sink to ground (pin 9) and source +5V (pin 8), default=ON
@@ -70,10 +71,6 @@
 // by default to disable stepper drivers on startup and when Parked. An Align or UnPark will enable the drivers.  Adjust below if you need these pulled LOW to disable the drivers.
 #define HA_DISABLED_HIGH
 #define DE_DISABLED_HIGH
-
-// enables Goto speed equalization for differing right ascension and declination StepsPerDegreeHA/Dec, default=OFF
-// must be _ON when StepsPerDegreeHA isn't equal to StepsPerDegreeDec (limited testing done)
-#define DEC_RATIO_OFF
 
 // enables Horizon coordinate goto functions, default=ON
 #define ALT_AZM_GOTO_ON

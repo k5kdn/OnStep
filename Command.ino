@@ -118,6 +118,7 @@ the pdCor  term is 1 in HA
             // set the IH offset
             // set the ID offset
             if (!syncEqu(newTargetRA,newTargetDec)) { commandError=true; }
+            IHS=IH*15.0*StepsPerDegreeHA;
             avgDec=newTargetDec;
             avgHA =haRange(LST-newTargetRA);
           } else 
@@ -136,6 +137,7 @@ the pdCor  term is 1 in HA
               double IH2=IH;
 
               IH    = (IH2+IH1)/2.0;                    // average offset in HA
+              IHS=IH*15.0*StepsPerDegreeHA;
               ID    = (ID2-ID1)/2.0;                    // new offset in Dec
               double IH3=IH;
               double ID3=ID;
@@ -152,6 +154,7 @@ the pdCor  term is 1 in HA
                 doCor = doCor*cos(avgDec/Rad);           // correct for measurement being away from the Celestial Equator
 
                 IH=IH3;
+                IHS=IH*15.0*StepsPerDegreeHA;
                 ID=ID3;
               } else commandError=true;
             } else commandError=true;
@@ -412,8 +415,10 @@ the pdCor  term is 1 in HA
           if (parameter[0]=='F') { // Fn: Debug
             long temp;
             switch (parameter[1]) {
-              case '0': cli(); temp=(long)(posHA-((long int)targetHA.part.m+PEC_HA)); sei(); sprintf(reply,"%ld",temp); quietReply=true; break;  // Debug0, true vs. target RA position          
-              case '1': sprintf(reply,"%ld",(long)(debugv1/1.00273790935)); quietReply=true; break;                                              // Debug1, RA tracking rate
+//              case '0': cli(); temp=(long)(posHA-((long)targetHA.part.m+PEC_HA)); sei(); sprintf(reply,"%ld",temp); quietReply=true; break;  // Debug0, true vs. target RA position          
+              case '0': cli(); temp=(long)(posDec-((long)targetDec.part.m)); sei(); sprintf(reply,"%ld",temp); quietReply=true; break;  // Debug0, true vs. target RA position          
+//              case '1': sprintf(reply,"%ld",(long)(debugv1/1.00273790935)); quietReply=true; break;                                              // Debug1, RA tracking rate
+              case '1': cli(); sprintf(reply,"%ld",(long)(posDec)); sei(); quietReply=true; break;                                              // Debug1, RA tracking rate
             }
           } else commandError=true;
         } else commandError=true;
@@ -544,6 +549,20 @@ the pdCor  term is 1 in HA
           quietReply=true;
       } else 
 
+// :L$#    Move to catalog name record
+//          Returns: 1
+      if (command[1]=='$') { 
+          Lib.nameRec();
+          quietReply=false;
+      } else 
+
+// :LD#    Clear current record
+//          Returns: Nothing
+      if (command[1]=='D') { 
+          Lib.clearCurrentRec();
+          quietReply=true;
+      } else 
+
 // :LL#    Clear current catalog
 //          Returns: Nothing
       if (command[1]=='L') { 
@@ -621,10 +640,15 @@ the pdCor  term is 1 in HA
 //         Returns: Nothing
       if ((command[1]=='e') || (command[1]=='w')) { 
         if (parkStatus==NotParked) {
-          enableGuideRate(currentGuideRate);
-          guideDirHA=command[1];
-          guideDurationHA=-1;
-          cli(); if (guideDirHA=='e') guideTimerRateHA=-guideTimerRate; else guideTimerRateHA=guideTimerRate; sei();
+          // block user from changing direction at high rates, just stop the guide instead
+          if ((guideDirHA!=0) && (command[1]!=guideDirHA) && (fabs(guideTimerRateHA)>2)) { 
+            guideDirHA='b';
+          } else {
+            enableGuideRate(currentGuideRate);
+            guideDirHA=command[1];
+            guideDurationHA=-1;
+            cli(); if (guideDirHA=='e') guideTimerRateHA=-guideTimerRate; else guideTimerRateHA=guideTimerRate; sei();
+          }
         }
         quietReply=true;
       } else
@@ -632,10 +656,15 @@ the pdCor  term is 1 in HA
 //         Returns: Nothing
       if ((command[1]=='n') || (command[1]=='s')) { 
         if (parkStatus==NotParked) {
-          enableGuideRate(currentGuideRate);
-          guideDirDec=command[1];
-          guideDurationDec=-1;
-          cli(); guideTimerRateDec=guideTimerRate; sei();
+          // block user from changing direction at high rates, just stop the guide instead
+          if ((guideDirDec!=0) && (command[1]!=guideDirDec) && (fabs(guideTimerRateDec)>2)) { 
+            guideDirDec='b';
+          } else {
+            enableGuideRate(currentGuideRate);
+            guideDirDec=command[1];
+            guideDurationDec=-1;
+            cli(); guideTimerRateDec=guideTimerRate; sei();
+          }
         }
         quietReply=true;
       } else
@@ -680,24 +709,25 @@ the pdCor  term is 1 in HA
             PECfirstRecord = true;
             PECstatus      = IgnorePEC;
             PECrecorded    = false;
-            EEPROM.write(EE_PECstatus,PECstatus);
-            EEPROM.write(EE_PECrecorded,PECrecorded);
+            EEPROM.update(EE_PECstatus,PECstatus);
+            EEPROM.update(EE_PECrecorded,PECrecorded);
             PECindex_record= 0;
             PECindex_sense = 0;
             EEPROM_writeQuad(EE_PECrecord_index,(byte*)&PECindex_record); 
             EEPROM_writeQuad(EE_PECsense_index,(byte*)&PECindex_sense);
           } else
           if (parameter[1]=='!') {
-            for (i=0; i<PECBufferSize; i++) EEPROM.write(EE_PECindex+i,PEC_buffer[i]);
             PECrecorded=true;
             PECstatus=IgnorePEC;
-            EEPROM.write(EE_PECrecorded,PECrecorded);
-            EEPROM.write(EE_PECstatus,PECstatus);
-            EEPROM_writeQuad(EE_PECrecord_index,(byte*)&PECindex_record); 
+            EEPROM.update(EE_PECrecorded,PECrecorded);
+            EEPROM.update(EE_PECstatus,PECstatus);
+           // EEPROM_writeQuad(EE_PECrecord_index,(byte*)&PECindex_record); 
             EEPROM_writeQuad(EE_PECsense_index,(byte*)&PECindex_sense);
+            // trigger recording of PEC buffer
+            PECautoRecord=PECBufferSize;
           } else
-          // Status is one of "IpPrR" (I)gnore, get ready to (p)lay, (P)laying, get ready to (r)ecord, (R)ecording
-          if (parameter[1]=='?') { const char *PECstatusCh = PECStatusString; reply[0]=PECstatusCh[PECstatus]; reply[1]=0; } else { quietReply=false; commandError=true; }
+          // Status is one of "IpPrR" (I)gnore, get ready to (p)lay, (P)laying, get ready to (r)ecord, (R)ecording.  Or an optional (.) to indicate an index detect.
+          if (parameter[1]=='?') { const char *PECstatusCh = PECStatusString; reply[0]=PECstatusCh[PECstatus]; reply[1]=0; reply[2]=0; if (PECindexDetected) { reply[1]='.'; PECindexDetected=false; } } else { quietReply=false; commandError=true; }
         } else commandError=true;
       } else
 
@@ -707,8 +737,8 @@ the pdCor  term is 1 in HA
       if (command[0]=='Q') {
         if (command[1]==0) {
           if (parkStatus==NotParked) {
-            if (guideDirHA)  { lstGuideStopHA =lst+3; guideDirHA=0; }
-            if (guideDirDec) { lstGuideStopDec=lst+3; guideDirDec=0; }
+            if (guideDirHA)  guideDirHA='b'; // break
+            if (guideDirDec) guideDirDec='b'; // break
             if (trackingState==TrackingMoveTo) { abortSlew=true; }
           }
           quietReply=true; 
@@ -717,7 +747,7 @@ the pdCor  term is 1 in HA
 //         Returns: Nothing
         if ((command[1]=='e') || (command[1]=='w')) { 
           if (parkStatus==NotParked) {
-            if (guideDirHA) { lstGuideStopHA=lst+3; guideDirHA=0; }
+            if (guideDirHA) guideDirHA='b'; // break
           }
           quietReply=true; 
         } else
@@ -725,7 +755,7 @@ the pdCor  term is 1 in HA
 //         Returns: Nothing
         if ((command[1]=='n') || (command[1]=='s')) {
           if (parkStatus==NotParked) {
-            if (guideDirDec) { lstGuideStopDec=lst+3; guideDirDec=0; }
+            if (guideDirDec) guideDirDec='b'; // break
           }
           quietReply=true; 
         } else commandError=true;
@@ -734,16 +764,16 @@ the pdCor  term is 1 in HA
 //   R - Slew Rate Commands
       if (command[0]=='R') {
 //  :RG#   Set Slew rate to Guiding Rate (slowest) 1X
-//  :RC#   Set Slew rate to Centering rate (2nd slowest) 4X
-//  :RM#   Set Slew rate to Find Rate (2nd Fastest) 8X
-//  :RS#   Set Slew rate to max (fastest) 24X
+//  :RC#   Set Slew rate to Centering rate (2nd slowest) 8X
+//  :RM#   Set Slew rate to Find Rate (2nd Fastest) 24X
+//  :RS#   Set Slew rate to max (fastest) ?X (1/2 of MaxRate)
 //  :Rn#   Set Slew rate to n, where n=0..9
 //         Returns: Nothing
       if ((command[1]=='G') || (command[1]=='C') || (command[1]=='M') || (command[1]=='S') || ((command[1]>='0') && (command[1]<='9'))) {
         if (command[1]=='G') i=2; else
-        if (command[1]=='C') i=4; else
-        if (command[1]=='M') i=5; else
-        if (command[1]=='S') i=7; else i=command[1]-'0';
+        if (command[1]=='C') i=5; else
+        if (command[1]=='M') i=6; else
+        if (command[1]=='S') i=8; else i=command[1]-'0';
         setGuideRate(i);
         quietReply=true; 
       } else commandError=true;
@@ -796,7 +826,7 @@ the pdCor  term is 1 in HA
           if ( (atoi2(parameter,&i)) && ((i>=-24) && (i<=24))) { 
             timeZone=i;
             b=timeZone+128; 
-            EEPROM.write(EE_sites+(currentSite)*25+8,b);
+            EEPROM.update(EE_sites+(currentSite)*25+8,b);
             UT1=LMT+timeZone; 
             UT1_start  =UT1;
             UT1mS_start=millis(); 
@@ -810,7 +840,7 @@ the pdCor  term is 1 in HA
 //          Return: 0 on failure
 //                  1 on success
       if (command[1]=='h')  { if ((parameter[0]!=0) && (strlen(parameter)<4)) {
-        if ( (atoi2(parameter,&i)) && ((i>=-30) && (i<=30))) { minAlt=i; EEPROM.write(EE_minAlt,minAlt+128); } else commandError=true; 
+        if ( (atoi2(parameter,&i)) && ((i>=-30) && (i<=30))) { minAlt=i; EEPROM.update(EE_minAlt,minAlt+128); } else commandError=true; 
       } else commandError=true; } else
 //  :SLHH:MM:SS#
 //          Set the local Time
@@ -844,7 +874,7 @@ the pdCor  term is 1 in HA
 //          Return: 0 on failure
 //                  1 on success
       if (command[1]=='o')  { if ((parameter[0]!=0) && (strlen(parameter)<3)) { 
-        if ( (atoi2(parameter,&i)) && ((i>=60) && (i<=90))) { maxAlt=i; EEPROM.write(EE_maxAlt,maxAlt); } else commandError=true; 
+        if ( (atoi2(parameter,&i)) && ((i>=60) && (i<=90))) { maxAlt=i; EEPROM.update(EE_maxAlt,maxAlt); } else commandError=true; 
       } else commandError=true; } else
 //  :SrHH:MM.T#
 //  :SrHH:MM:SS#
@@ -1094,13 +1124,14 @@ the pdCor  term is 1 in HA
 //         Returns: Nothing or current site ?#
       if (command[0]=='W') {
         if ((command[1]>='0') && (command[1]<='3')) {
-          currentSite=command[1]-'0'; EEPROM.write(EE_currentSite,currentSite); quietReply=true;
-          EEPROM_readQuad(EE_sites+(currentSite*25+0),(byte*)&latitude);
+          currentSite=command[1]-'0'; EEPROM.update(EE_currentSite,currentSite); quietReply=true;
+          float f; 
+          EEPROM_readQuad(EE_sites+(currentSite*25+0),(byte*)&f); latitude=f;
           if (latitude<0) celestialPoleDec=-90L; else celestialPoleDec=90L;
           cosLat=cos(latitude/Rad);
           sinLat=sin(latitude/Rad);
           if (celestialPoleDec>0) HADir = HADirNCPInit; else HADir = HADirSCPInit;
-          EEPROM_readQuad(EE_sites+(currentSite*25+4),(byte*)&longitude);
+          EEPROM_readQuad(EE_sites+(currentSite*25+4),(byte*)&f); longitude=f;
           b=EEPROM.read(EE_sites+(currentSite*25+8)); timeZone=b-128;
         } else 
         if (command[1]=='?') {
@@ -1256,7 +1287,7 @@ boolean clearCommand_serial_one() {
 // calculates the tracking speed for move commands
 void setGuideRate(int g) {
   currentGuideRate=g;
-  if ((g<=GuideRate1x) && (currentPulseGuideRate!=g)) { currentPulseGuideRate=g; EEPROM.write(EE_pulseGuideRate,g); }
+  if ((g<=GuideRate1x) && (currentPulseGuideRate!=g)) { currentPulseGuideRate=g; EEPROM.update(EE_pulseGuideRate,g); }
 }
 
 void enableGuideRate(int g) {
@@ -1266,8 +1297,6 @@ void enableGuideRate(int g) {
   activeGuideRate=g;
   
   // this enables the guide rate
-  //                0.25X,0.5X,1X,2X,4X,8X ,16X,24X,40X 60X
-  // guideRates[10]={3.75,7.5 ,15,30,60,120,240,360,600,900}; 
   guideTimerRate=(double)guideRates[g]/15.0;
 
   cli();
